@@ -279,4 +279,42 @@ fit = model.fit(
 
 # Print metrics
 print(fit.history)
+#Save the final energy model
+from tensorflow.keras.models import load_model
 
+model.save('final_energy_model.h5')
+model = load_model('final_energy_model.h5')
+
+#Now take a new set of data and predict the energy consumption with the final model
+
+
+
+
+# Read in the original dataset
+df = pd.read_csv('data_energy_consumption.csv')
+
+# Step 1: Create a new dataset with 10% of the rows from the original dataset
+new_df = df.sample(frac=0.1, random_state=42)
+
+# Step 2: Save the new dataset (optional, to verify or for future use)
+new_df.to_csv('new_energy_consumption_data.csv', index=False)
+
+
+# Load new data
+new_data = pd.read_csv('new_energy_consumption_data.csv')
+
+# Perform the same feature engineering
+new_data['date'] = pd.to_datetime(new_data['date'])
+new_data['month'] = new_data.date.dt.month
+new_data['hour'] = new_data.date.dt.hour
+
+# Drop unnecessary columns
+new_x = new_data.drop(columns=['date', 'Appliances'])
+
+# Scale the new data using the same scaler
+new_x = scaler.transform(new_x)  # Use the same scalers from
+
+# Make predictions on the new data
+predictions = model.predict(new_x)
+predicted_classes = np.argmax(predictions, axis=1)
+print(predicted_classes)
