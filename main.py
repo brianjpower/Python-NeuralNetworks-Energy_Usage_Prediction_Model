@@ -318,3 +318,10 @@ new_x = scaler.transform(new_x)  # Use the same scalers from
 predictions = model.predict(new_x)
 predicted_classes = np.argmax(predictions, axis=1)
 print(predicted_classes)
+ #Finally, visualise the final model
+#from tensorflow.keras.utils import plot_model
+#plot_model(model, to_file='model_structure.png', show_shapes=True, show_layer_names=True)
+print("Model Summary:")
+model.summary()
+
+
