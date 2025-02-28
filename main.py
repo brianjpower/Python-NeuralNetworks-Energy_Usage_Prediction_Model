@@ -84,7 +84,7 @@ w = model.get_weights()
 TOT = x.shape[0]
 N = int(TOT * 0.70)
 M = int(TOT * 0.30)
-B = 1  # Number of replications for bootstrapping
+B = 2  # Number of replications for bootstrapping
 
 acc_train = np.empty(B)  # accumulated train and test data for 20 bootstraps
 acc_test = np.empty(B)
@@ -116,7 +116,9 @@ for b in range(B):
 #plt.show()
 
 # Hyperparameter tuning
-H_vec = [0, 5, 10, 15, 20, 25]
+#H_vec = [0, 5, 10, 15, 20, 25]
+H_vec = [15,20,25]
+
 H = len(H_vec)
 L = round(TOT * 0.2)
 test_indices = np.random.choice(range(TOT), L, replace=False)
@@ -128,6 +130,63 @@ M = TOT - L - N
 
 acc_train = np.empty((B, H))
 acc_val = np.empty((B, H))
+
+train_indices = np.random.choice(set_indices, N, replace=False)
+val_indices = np.setdiff1d(set_indices, train_indices)
+
+x_train, y_train = x[train_indices], y[train_indices]
+x_val, y_val = x[val_indices], y[val_indices]
+
+"""
+for h, my_units in enumerate(H_vec):
+    model=Sequential()
+    model.add(Input(shape=(V,)))  # Explicitly define the input shape
+    model.add(Dense(my_units, activation='relu'))  # Add subsequent layers
+    model.add(Dense(units=K, activation='softmax'))
+    #model = Sequential([
+    #Dense(units, activation='relu', input_shape=(V,)),
+    #Dense(K, activation='softmax')
+    #])
+    #model.add(Input(shape=(V,)))  # Explicitly define the input shape
+    #model.add(Dense(units=64, activation='relu'))  # Add subsequent layers
+    #model.add(Dense(units=K, activation='softmax'))
+
+    model.compile(
+        loss="binary_crossentropy",
+        optimizer=SGD(),
+        metrics=["accuracy"]
+    )
+
+    fit = model.fit(
+        x_train, y_train,
+        validation_data=(x_val, y_val),
+        verbose=0
+    )
+
+    n_epoch = len(fit.history['accuracy'])
+    acc_train[b, h] = fit.history['accuracy'][-1]
+    acc_val[b, h] = fit.history['val_accuracy'][-1]
+    clear_session()
+    gc.collect()
+
+    print(n_epoch)
+    print(acc_train[b, h])
+    print(acc_val[b, h])
+
+mean_acc_train = np.mean(acc_train, axis=0)
+mean_acc_val = np.mean(acc_val, axis=0)
+print(mean_acc_train)
+print(mean_acc_val)
+# Plot training and validation accuracy
+plt.plot(H_vec, mean_acc_train, label='Training Accuracy', color='black', linewidth=2)
+plt.plot(H_vec, mean_acc_val, label='Validation Accuracy', color='darkorange', linewidth=2)
+plt.xlabel("H")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+"""
+
+
 
 for b in range(B):
     train_indices = np.random.choice(set_indices, N, replace=False)
@@ -183,6 +242,8 @@ plt.ylabel("Accuracy")
 plt.legend()
 plt.show()
 
+
+"""
 # Plot training and validation accuracy
 plt.plot(H_vec, mean_acc_train, label='Training Accuracy', color='black', linewidth=2)
 plt.plot(H_vec, mean_acc_val, label='Validation Accuracy', color='darkorange', linewidth=2)
@@ -190,7 +251,7 @@ plt.xlabel("H")
 plt.ylabel("Accuracy")
 plt.legend()
 plt.show()
-
+"""
 # Best hyperparameter
 H_best = H_vec[np.argmax(mean_acc_val)]
 print("Best H:", H_best)
