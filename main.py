@@ -182,3 +182,40 @@ plt.xlabel("H")
 plt.ylabel("Accuracy")
 plt.legend()
 plt.show()
+
+# Plot training and validation accuracy
+plt.plot(H_vec, mean_acc_train, label='Training Accuracy', color='black', linewidth=2)
+plt.plot(H_vec, mean_acc_val, label='Validation Accuracy', color='darkorange', linewidth=2)
+plt.xlabel("H")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+
+# Best hyperparameter
+H_best = H_vec[np.argmax(mean_acc_val)]
+print("Best H:", H_best)
+
+# Final model training
+test_mask = np.ones(TOT, dtype=bool)
+test_mask[test_indices] = False
+
+model = Sequential([
+    Dense(H_best, activation='relu', input_shape=(V,)),
+    Dense(K, activation='sigmoid')
+])
+
+model.compile(
+    loss="binary_crossentropy",
+    optimizer=SGD(),
+    metrics=["accuracy"]
+)
+
+fit = model.fit(
+    x[test_mask], y[test_mask],
+    validation_data=(x_test, y_test),
+    verbose=0
+)
+
+# Print metrics
+print(fit.history)
+
