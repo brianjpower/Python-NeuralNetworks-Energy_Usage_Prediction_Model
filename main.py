@@ -282,8 +282,8 @@ print(fit.history)
 #Save the final energy model
 from tensorflow.keras.models import load_model
 
-model.save('final_energy_model.h5')
-model = load_model('final_energy_model.h5')
+model.save('final_energy_model.keras')
+model = load_model('final_energy_model.keras')
 
 #Now take a new set of data and predict the energy consumption with the final model
 
