@@ -1,11 +1,13 @@
 
 import pandas as pd
 import numpy as np
+import plot.matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 #from tensorflow.keras import layers
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers import Input
 
@@ -17,23 +19,36 @@ from sklearn.model_selection import train_test_split
 df = pd.read_csv('data_energy_consumption.csv')
 pd.set_option('display.max_columns', None)
 print(df.describe())
-print(df.head())
-print(df.tail())
-print(df['Appliances'].unique())
+#print(df.head())
+#print(df.tail())
+#print(df['Appliances'].unique())
 
 #Format the date and time data
 df['date'] = pd.to_datetime(df['date'])
+#df['day'] = df.date.dt.day
 df['month'] = df.date.dt.month
 df['hour'] = df.date.dt.hour
+print(df.head())
+
+#set y to the appliance data and convert high to 1 and normal to zero
+y = np.where(df['Appliances']=="normal", 0, 1)
 
 
 #Remove the Appliances columns from the feature dataset since this will be
 #target categorical variable
-x = df.drop(columns=['Appliances'])
-y = df['Appliances']
+x = df.drop(columns=['date','Appliances'])
+#x = df.drop(columns=['date'])
 print(x.head())
-print(x.tail())
-print(y.head())
+#Now we want to scale the x data
+scaler = StandardScaler()
+x = scaler.fit_transform(x) # this is setting mean to zero and std dev to 1 bascially, shortcut for x=(x-x.mean())/x.std()
+
+V = x.shape[1] # store the number of predictors/features
+print(V)
+# one hot encoding for y categorical data, enable nn to handle multi-class classification
+y = to_categorical(y)
+K = y.shape[1] # store the number of classes
+print(K)
 
 model = Sequential()
 
@@ -41,12 +56,51 @@ model = Sequential()
 #model.add(Dense(units=64, activation='relu', input_shape=(10,)))
 #model.add(Dense(units=1, activation='sigmoid'))
 model = Sequential()
-model.add(Input(shape=(10,)))  # Explicitly define the input shape
+model.add(Input(shape=(V,)))  # Explicitly define the input shape
 model.add(Dense(units=64, activation='relu'))  # Add subsequent layers
-model.add(Dense(units=1, activation='sigmoid'))
+model.add(Dense(units=K, activation='softmax'))
 
 # Compile the model
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=SGD(), loss='binary_crossentropy', metrics=['accuracy'])
+
 
 # Summary of the model
-model.summary()
+#model.summary()
+
+# Save initial set of weights
+w = model.get_weights()
+
+# Train and test data split with 70/30 split
+TOT = x.shape[0]
+N = int(TOT * 0.70)
+M = int(TOT * 0.30)
+B = 5  # Number of replications for bootstrapping
+
+acc_train = np.empty(B)  # accumulated train and test data for 20 bootstraps
+acc_test = np.empty(B)
+
+for b in range(B):
+    #randomly choose train indices and set test indiced to complement
+    train_indices = np.random.choice(range(TOT), N, replace=False)
+    test_indices = np.setdiff1d(range(TOT), train_indices)
+
+    x_train, y_train = x[train_indices], y[train_indices]
+    x_test, y_test = x[test_indices], y[test_indices]
+
+    model.set_weights(w)  # Reset weights
+
+    fit = model.fit(
+        x_train, y_train,
+        validation_data=(x_test, y_test),
+        verbose=0
+    )
+
+    n_epoch = len(fit.history['accuracy'])
+    acc_train[b] = fit.history['accuracy'][-1]
+    acc_test[b] = fit.history['val_accuracy'][-1]
+
+
+plt.boxplot([acc_train, acc_test], labels=['Train', 'Test'])
+plt.ylabel("Accuracy")
+plt.show()
