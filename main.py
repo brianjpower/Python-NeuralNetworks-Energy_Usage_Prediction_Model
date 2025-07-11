@@ -240,6 +240,7 @@ plt.plot(H_vec, mean_acc_val, label='Validation Accuracy', color='darkorange', l
 plt.xlabel("H")
 plt.ylabel("Accuracy")
 plt.legend()
+plt.title("Plot of training & val accuracy with at various hyperparameters")
 plt.show()
 
 
